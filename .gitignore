@@ -8,3 +8,6 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Qdrant
+data/qdrant_store/

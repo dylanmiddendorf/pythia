@@ -13,6 +13,13 @@ resolution-markers = [
     "python_full_version < '3.13' and sys_platform != 'emscripten' and sys_platform != 'win32'",
 ]
 
+[manifest]
+members = [
+    "assistant",
+    "preprocess",
+    "retrieve",
+]
+
 [[package]]
 name = "accelerate"
 version = "1.13.0"
@@ -182,6 +189,31 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/19/14/2c5dd9f512b66549ae92767a9c7b330ae88e1932ca57876909410251fe13/anyio-4.13.0.tar.gz", hash = "sha256:334b70e641fd2221c1505b3890c69882fe4a2df910cba14d97019b90b24439dc", size = 231622, upload-time = "2026-03-24T12:59:09.671Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/da/42/e921fccf5015463e32a3cf6ee7f980a6ed0f395ceeaa45060b61d86486c2/anyio-4.13.0-py3-none-any.whl", hash = "sha256:08b310f9e24a9594186fd75b4f73f4a4152069e3853f1ed8bfbf58369f4ad708", size = 114353, upload-time = "2026-03-24T12:59:08.246Z" },
+]
+
+[[package]]
+name = "assistant"
+version = "0.1.0"
+source = { editable = "assistant" }
+dependencies = [
+    { name = "docling" },
+    { name = "llama-index-core" },
+    { name = "ollama" },
+    { name = "peft" },
+    { name = "qdrant-client" },
+    { name = "sentence-transformers" },
+    { name = "torch" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "docling", specifier = ">=2.88.0" },
+    { name = "llama-index-core", specifier = ">=0.14.20" },
+    { name = "ollama", specifier = ">=0.6.1" },
+    { name = "peft", specifier = ">=0.19.0" },
+    { name = "qdrant-client", specifier = ">=1.17.1" },
+    { name = "sentence-transformers", specifier = ">=5.4.1" },
+    { name = "torch", specifier = ">=2.11.0" },
 ]
 
 [[package]]
@@ -1971,6 +2003,31 @@ wheels = [
 ]
 
 [[package]]
+name = "preprocess"
+version = "0.1.0"
+source = { editable = "preprocess" }
+dependencies = [
+    { name = "docling" },
+    { name = "llama-index-core" },
+    { name = "ollama" },
+    { name = "peft" },
+    { name = "qdrant-client" },
+    { name = "sentence-transformers" },
+    { name = "torch" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "docling", specifier = ">=2.88.0" },
+    { name = "llama-index-core", specifier = ">=0.14.20" },
+    { name = "ollama", specifier = ">=0.6.1" },
+    { name = "peft", specifier = ">=0.19.0" },
+    { name = "qdrant-client", specifier = ">=1.17.1" },
+    { name = "sentence-transformers", specifier = ">=5.4.1" },
+    { name = "torch", specifier = ">=2.11.0" },
+]
+
+[[package]]
 name = "propcache"
 version = "0.4.1"
 source = { registry = "https://pypi.org/simple" }
@@ -2358,31 +2415,6 @@ wheels = [
 ]
 
 [[package]]
-name = "pythia"
-version = "0.1.0"
-source = { virtual = "." }
-dependencies = [
-    { name = "docling" },
-    { name = "llama-index-core" },
-    { name = "ollama" },
-    { name = "peft" },
-    { name = "qdrant-client" },
-    { name = "sentence-transformers" },
-    { name = "torch" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "docling", specifier = ">=2.88.0" },
-    { name = "llama-index-core", specifier = ">=0.14.20" },
-    { name = "ollama", specifier = ">=0.6.1" },
-    { name = "peft", specifier = ">=0.19.0" },
-    { name = "qdrant-client", specifier = ">=1.17.1" },
-    { name = "sentence-transformers", specifier = ">=5.4.1" },
-    { name = "torch", specifier = ">=2.11.0" },
-]
-
-[[package]]
 name = "python-dateutil"
 version = "2.9.0.post0"
 source = { registry = "https://pypi.org/simple" }
@@ -2647,6 +2679,31 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/5f/a4/98b9c7c6428a668bf7e42ebb7c79d576a1c3c1e3ae2d47e674b468388871/requests-2.33.1.tar.gz", hash = "sha256:18817f8c57c6263968bc123d237e3b8b08ac046f5456bd1e307ee8f4250d3517", size = 134120, upload-time = "2026-03-30T16:09:15.531Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/d7/8e/7540e8a2036f79a125c1d2ebadf69ed7901608859186c856fa0388ef4197/requests-2.33.1-py3-none-any.whl", hash = "sha256:4e6d1ef462f3626a1f0a0a9c42dd93c63bad33f9f1c1937509b8c5c8718ab56a", size = 64947, upload-time = "2026-03-30T16:09:13.83Z" },
+]
+
+[[package]]
+name = "retrieve"
+version = "0.1.0"
+source = { editable = "retrieve" }
+dependencies = [
+    { name = "docling" },
+    { name = "llama-index-core" },
+    { name = "ollama" },
+    { name = "peft" },
+    { name = "qdrant-client" },
+    { name = "sentence-transformers" },
+    { name = "torch" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "docling", specifier = ">=2.88.0" },
+    { name = "llama-index-core", specifier = ">=0.14.20" },
+    { name = "ollama", specifier = ">=0.6.1" },
+    { name = "peft", specifier = ">=0.19.0" },
+    { name = "qdrant-client", specifier = ">=1.17.1" },
+    { name = "sentence-transformers", specifier = ">=5.4.1" },
+    { name = "torch", specifier = ">=2.11.0" },
 ]
 
 [[package]]

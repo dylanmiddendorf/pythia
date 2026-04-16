@@ -1,0 +1,17 @@
+CRITICAL
+========
+
+
+NOT SO CRITICAL
+===============
+- Add LLM verifier docling pipeline (sometimes "where" is prompted to section header)
+- Lazy import modules in CLI to improve `argparse` responsiveness
+- Trim dependencies of sub-packages
+- Add quickstart to README
+
+ON THE BACK BURNER
+==================
+
+
+NOT PLANNED
+===========
