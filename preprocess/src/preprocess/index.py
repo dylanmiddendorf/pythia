@@ -14,8 +14,8 @@ EMBEDDING_DIM = 1024  # https://huggingface.co/jinaai/jina-embeddings-v5-text-sm
 QDRANT_PATH = "data/qdrant_store"
 QDRANT_COLLECTION = "datasheets"
 
-_NUMBERED_HEADER = re.compile(r"^## \[Page (\d+)\]\s+(\d+(?:\.\d)*)\s+(.*)\s*$", re.IGNORECASE | re.MULTILINE)
-_FALLBACK_HEADER = re.compile(r"^## \[Page (\d+)\]\s+(.*)\s*$", re.IGNORECASE | re.MULTILINE)
+_NUMBERED_HEADER = re.compile(r"^## <!-- page: (\d+) --> (\d+(?:\.\d)*) (.*)$", re.IGNORECASE | re.MULTILINE)
+_FALLBACK_HEADER = re.compile(r"^## <!-- page: (\d+) --> (.*)$", re.IGNORECASE | re.MULTILINE)
 
 _DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -41,15 +41,17 @@ def chunk_markdown(md_text: str, component: str) -> list[dict]:
             page = section_header.group(1)
             section_number = section_header.group(2)
             section_name = section_header.group(3)
+            chunk_text = f"## {section_number} {section_name}\n{"\n".join(section_text)}"
         elif (section_header := _FALLBACK_HEADER.match(section_header_text)) is not None:
             page = section_header.group(1)
             section_number = None  # Can't find section number (e.g., "Table of Contents")
             section_name = section_header.group(2)
+            chunk_text = f"## {section_name}\n{"\n".join(section_text)}"
         else:
             print(f"[WARNING] Skipping chunk")
             continue
 
-        chunk_text = f"## {section_name}\n{"\n".join(section_text)}"
+        
         chunks.append(
             {
                 "text": chunk_text,
@@ -106,4 +108,3 @@ def upsert_chunks(client: QdrantClient, chunks: list[dict], embeddings: list[lis
         )
 
     client.upsert(collection_name=QDRANT_COLLECTION, points=points)
-

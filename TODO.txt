@@ -12,6 +12,14 @@ NOT SO CRITICAL
 ON THE BACK BURNER
 ==================
 
+1. Verify containers (groups) that have text elements with "Figure"
+  - They might be figures (send through picture pipeline)
+2. Outsource table parsing to SoTA vision models (e.g., Claude Haiku 4.5)
+  - Tables should be parsed into HTML, since cells can span multiple rows/columns
+3. Verify section headers to...
+  - Demote false positives (e.g., "note", "where", "therefore", etc.)
+  - Split fused headers (e.g., "6 Specifications 6.1 Absolute Maximum Ratings") -- low priority
+4. Outsource equation parsing to SoTA vision models
 
 NOT PLANNED
 ===========
