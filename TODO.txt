@@ -1,25 +1,28 @@
 CRITICAL
 ========
 
+- Implement hybrid retrieval via BM25 and RRF
 
 NOT SO CRITICAL
 ===============
-- Add LLM verifier docling pipeline (sometimes "where" is prompted to section header)
-- Lazy import modules in CLI to improve `argparse` responsiveness
-- Trim dependencies of sub-packages
-- Add quickstart to README
+
+- Preprocessing overhaul
+  1. Verify containers (groups) that have text elements with "Figure"
+    - They might be figures (send through picture pipeline)
+  2. Outsource table parsing to SoTA vision models (e.g., Claude Haiku 4.5)
+    - Tables should be parsed into HTML, since cells can span multiple rows/columns
+  3. Verify section headers to...
+    - Demote false positives (e.g., "note", "where", "therefore", etc.)
+      - Leverage Qwen3.5 2B (non-thinking) to classify if it's a false positive
+    - Split fused headers (e.g., "6 Specifications 6.1 Absolute Maximum Ratings") -- low priority
+  4. Outsource equation parsing to SoTA vision models
+
 
 ON THE BACK BURNER
 ==================
 
-1. Verify containers (groups) that have text elements with "Figure"
-  - They might be figures (send through picture pipeline)
-2. Outsource table parsing to SoTA vision models (e.g., Claude Haiku 4.5)
-  - Tables should be parsed into HTML, since cells can span multiple rows/columns
-3. Verify section headers to...
-  - Demote false positives (e.g., "note", "where", "therefore", etc.)
-  - Split fused headers (e.g., "6 Specifications 6.1 Absolute Maximum Ratings") -- low priority
-4. Outsource equation parsing to SoTA vision models
+- Lazy import modules in CLI to improve `argparse` responsiveness
+- Trim dependencies of sub-packages
 
 NOT PLANNED
 ===========
