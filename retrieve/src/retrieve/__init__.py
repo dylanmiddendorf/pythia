@@ -1,37 +1,31 @@
 import torch
+from config import settings
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, VectorParams
 from sentence_transformers import SentenceTransformer
-
-TOP_K = 5
-QDRANT_PATH = "data/qdrant_store"
-QDRANT_COLLECTION = "datasheets"
-
-EMBEDDING_MODEL = "jinaai/jina-embeddings-v5-text-small"
-EMBEDDING_DIM = 1024  # https://huggingface.co/jinaai/jina-embeddings-v5-text-small
 
 _DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 def get_embedding_model():
     return SentenceTransformer(
-        EMBEDDING_MODEL,
+        settings.embedding.model,
         trust_remote_code=True,
         device=_DEVICE,
         model_kwargs={"dtype": torch.bfloat16, "default_task": "retrieval"},
     )
 
 
-def get_qdrant(path: str = QDRANT_PATH) -> QdrantClient:
-    client = QdrantClient(path=path)
+def get_qdrant(path: str | None = None) -> QdrantClient:
+    client = QdrantClient(path=path or settings.qdrant.path)
 
     # Create collection if it doesn't exist yet.
     existing = [c.name for c in client.get_collections().collections]
-    if QDRANT_COLLECTION not in existing:
+    if settings.qdrant.collection not in existing:
         client.create_collection(
-            collection_name=QDRANT_COLLECTION,
+            collection_name=settings.qdrant.collection,
             vectors_config=VectorParams(
-                size=EMBEDDING_DIM,
+                size=settings.embedding.dim,
                 distance=Distance.COSINE,
             ),
         )
@@ -43,14 +37,14 @@ def retrieve(
     query: str,
     model: SentenceTransformer,
     client: QdrantClient,
-    top_k: int = TOP_K,
+    top_k: int | None = None,
 ) -> list[dict]:
     q_vec = model.encode(query, normalize_embeddings=True).tolist()
 
     hits = client.query_points(
-        collection_name=QDRANT_COLLECTION,
+        collection_name=settings.qdrant.collection,
         query=q_vec,
-        limit=top_k,
+        limit=top_k if top_k is not None else settings.retrieve.top_k,
         with_payload=True,
     ).points
 

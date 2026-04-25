@@ -2,17 +2,12 @@ import hashlib
 import re
 
 import torch
+from config import settings
 from llama_index.core.node_parser import MarkdownNodeParser
 from llama_index.core.schema import Document as LlamaDocument
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, PointStruct, VectorParams
 from sentence_transformers import SentenceTransformer
-
-EMBEDDING_MODEL = "jinaai/jina-embeddings-v5-text-small"
-EMBEDDING_DIM = 1024  # https://huggingface.co/jinaai/jina-embeddings-v5-text-small
-
-QDRANT_PATH = "data/qdrant_store"
-QDRANT_COLLECTION = "datasheets"
 
 _NUMBERED_HEADER = re.compile(r"^## <!-- page: (\d+) --> (\d+(?:\.\d)*) (.*)$", re.IGNORECASE | re.MULTILINE)
 _FALLBACK_HEADER = re.compile(r"^## <!-- page: (\d+) --> (.*)$", re.IGNORECASE | re.MULTILINE)
@@ -70,7 +65,7 @@ def chunk_markdown(md_text: str, component: str) -> list[dict]:
 
 def embed_texts(texts: list[str]) -> list[list[float]]:
     model = SentenceTransformer(
-        EMBEDDING_MODEL,
+        settings.embedding.model,
         trust_remote_code=True,
         device=_DEVICE,
         model_kwargs={"dtype": torch.bfloat16, "default_task": "retrieval"},
@@ -79,16 +74,16 @@ def embed_texts(texts: list[str]) -> list[list[float]]:
     return model.encode(texts, normalize_embeddings=True, batch_size=8, show_progress_bar=True).tolist()
 
 
-def get_qdrant(path: str = QDRANT_PATH) -> QdrantClient:
-    client = QdrantClient(path=path)
+def get_qdrant(path: str | None = None) -> QdrantClient:
+    client = QdrantClient(path=path or settings.qdrant.path)
 
     # Create collection if it doesn't exist yet.
     existing = [c.name for c in client.get_collections().collections]
-    if QDRANT_COLLECTION not in existing:
+    if settings.qdrant.collection not in existing:
         client.create_collection(
-            collection_name=QDRANT_COLLECTION,
+            collection_name=settings.qdrant.collection,
             vectors_config=VectorParams(
-                size=EMBEDDING_DIM,
+                size=settings.embedding.dim,
                 distance=Distance.COSINE,
             ),
         )
@@ -107,4 +102,4 @@ def upsert_chunks(client: QdrantClient, chunks: list[dict], embeddings: list[lis
             )
         )
 
-    client.upsert(collection_name=QDRANT_COLLECTION, points=points)
+    client.upsert(collection_name=settings.qdrant.collection, points=points)

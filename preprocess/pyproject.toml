@@ -3,6 +3,8 @@ name = "preprocess"
 version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [
+    "config",
+    "anthropic>=0.97.0",
     "docling>=2.88.0",
     "llama-index-core>=0.14.20",
     "ollama>=0.6.1",
@@ -14,6 +16,9 @@ dependencies = [
 
 [project.scripts]
 preprocess = "preprocess.cli:main"
+
+[tool.uv.sources]
+config = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

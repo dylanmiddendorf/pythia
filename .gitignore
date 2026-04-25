@@ -11,3 +11,6 @@ wheels/
 
 # Qdrant
 data/qdrant_store/
+
+# Secrets
+.env

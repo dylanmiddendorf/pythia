@@ -6,6 +6,7 @@ from docling.datamodel.pipeline_options import PdfPipelineOptions, TableFormerMo
 from docling.document_converter import DocumentConverter, PdfFormatOption
 from docling_core.types.doc.document import DoclingDocument
 from docling_core.types.doc.labels import DocItemLabel
+from preprocess.parse.pipeline import DatasheetPipeline
 
 _PROSE_HEADERS = re.compile(
     r"^## <!-- page: \d+ --> (where|notes?:?|therefore:?)$",
@@ -19,20 +20,11 @@ _LIST_ITEM_HEADERS = re.compile(
 
 
 def build_converter() -> DocumentConverter:
-    pipeline_options = PdfPipelineOptions()
-    pipeline_options.table_structure_options.mode = TableFormerMode.ACCURATE  # type: ignore
-
-    # TODO: Improve table extraction:
-    # - Export to HTML
-    # - Outsource to Claude Haiku 4.5
-
-    # TODO: Improve formula extraction (currently dogsh*t)
-    # formula_engine = CodeFormulaVlmOptions.from_preset("codeformulav2")
-    # pipeline_options.code_formula_options = formula_engine
-
     return DocumentConverter(
         format_options={
-            InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_options),
+            InputFormat.PDF: PdfFormatOption(
+                pipeline_cls=DatasheetPipeline,
+            )
         }
     )
 

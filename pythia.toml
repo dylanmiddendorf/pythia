@@ -1,0 +1,13 @@
+[embedding]
+model = "jinaai/jina-embeddings-v5-text-small"
+dim = 1024
+
+[qdrant]
+path = "data/qdrant_store"
+collection = "datasheets"
+
+[retrieve]
+top_k = 5
+
+[assistant]
+ollama_model = "qwen3.5:4b"

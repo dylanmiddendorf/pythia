@@ -2,9 +2,10 @@ import argparse
 import sys
 from pathlib import Path
 
-from preprocess.index import QDRANT_PATH, chunk_markdown, embed_texts, get_qdrant, upsert_chunks
+from preprocess.index import chunk_markdown, embed_texts, get_qdrant, upsert_chunks
 from preprocess.parse import build_converter, extract_markdown
 
+from config import settings
 
 def cmd_parse(args: argparse.Namespace) -> None:
     converter = build_converter()
@@ -69,9 +70,9 @@ def build_parser() -> argparse.ArgumentParser:
     p_index.add_argument("component", help="Component name used as metadata (e.g. 'TPS54331').")
     p_index.add_argument(
         "--qdrant-path",
-        default=QDRANT_PATH,
+        default=settings.qdrant.path,
         metavar="PATH",
-        help=f"Path to the local Qdrant store (default: {QDRANT_PATH!r}).",
+        help=f"Path to the local Qdrant store (default: {settings.qdrant.path!r}).",
     )
     p_index.set_defaults(func=cmd_index)
 
@@ -81,9 +82,9 @@ def build_parser() -> argparse.ArgumentParser:
     p_run.add_argument("component", help="Component name used as metadata (e.g. 'TPS54331').")
     p_run.add_argument(
         "--qdrant-path",
-        default=QDRANT_PATH,
+        default=settings.qdrant.path,
         metavar="PATH",
-        help=f"Path to the local Qdrant store (default: {QDRANT_PATH!r}).",
+        help=f"Path to the local Qdrant store (default: {settings.qdrant.path!r}).",
     )
     p_run.set_defaults(func=cmd_run)
 

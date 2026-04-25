@@ -1,21 +1,15 @@
 from __future__ import annotations
 
 import argparse
+import gc
 import re
 import textwrap
-import torch
-import gc
 
+import torch
+from config import settings
 from ollama import chat, ChatResponse
 from qdrant_client import QdrantClient
 from sentence_transformers import SentenceTransformer
-
-EMBEDDING_MODEL = "jinaai/jina-embeddings-v5-text-small"
-EMBEDDING_DIM = 1024
-QDRANT_PATH = "data/qdrant_store"
-QDRANT_COLLECTION = "datasheets"
-OLLAMA_MODEL = "qwen3.5:4b"
-TOP_K = 5
 
 SYSTEM_PROMPT = textwrap.dedent(
     """\
@@ -105,7 +99,7 @@ def generate(
     messages = build_prompt(query, context_chunks)
 
     response: ChatResponse = chat(
-        model=OLLAMA_MODEL,
+        model=settings.assistant.ollama_model,
         messages=messages,
         options={
             "temperature": 0.2,  # low temp for factual grounding
@@ -130,7 +124,7 @@ def strip_think_tags(text: str) -> str:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Ask the Datasheet — RAG generation PoC")
     parser.add_argument("query", help="Natural language question")
-    parser.add_argument("--top-k", type=int, default=TOP_K, help="Number of chunks to retrieve")
+    parser.add_argument("--top-k", type=int, default=settings.retrieve.top_k, help="Number of chunks to retrieve")
     parser.add_argument(
         "--no-think",
         action="store_true",
@@ -143,14 +137,14 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    print(f"[embed] Loading {EMBEDDING_MODEL} ...")
+    print(f"[embed] Loading {settings.embedding.model} ...")
     embedder = SentenceTransformer(
-        EMBEDDING_MODEL,
+        settings.embedding.model,
         trust_remote_code=True,
         device="cuda",
         model_kwargs={"dtype": torch.bfloat16, "default_task": "retrieval"},  # Recommended for GPUs
     )
-    client = QdrantClient(path=QDRANT_PATH)
+    client = QdrantClient(path=settings.qdrant.path)
 
     print(f"[retrieve] Searching for top-{args.top_k} chunks ...")
     chunks = retrieve(args.query, embedder, client, top_k=args.top_k)
@@ -168,10 +162,10 @@ def main() -> None:
         print("RETRIEVED CONTEXT")
         print(f"{'=' * 60}")
         for i, c in enumerate(chunks, 1):
-            print(f"\n--- Chunk {i} (score: {c['score']:.4f}, src: {c['source']}) ---")
+            print(f"\n--- Chunk {i} (score: {c['score']:.4f}, src: {c['component']}) ---")
             print(c["text"][:400] + ("..." if len(c["text"]) > 400 else ""))
 
-    print(f"\n[generate] Querying {OLLAMA_MODEL} ...")
+    print(f"\n[generate] Querying {settings.assistant.ollama_model} ...")
     answer, thinking = generate(args.query, chunks, think=not args.no_think)
 
     if thinking:
