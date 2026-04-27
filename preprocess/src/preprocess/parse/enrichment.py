@@ -1,5 +1,6 @@
 from collections.abc import Iterable
 from io import BytesIO
+import logging
 
 from PIL.Image import Image
 import anthropic
@@ -12,13 +13,12 @@ from docling_core.types.doc import DocItemLabel, DoclingDocument, NodeItem, Text
 from config import settings
 
 FORMULA_EXTRACTION_PROMPT = """
-Extract the equation from the image and return its LaTeX representation.
+Extract the equation(s) from the image as MathJax-compatible LaTeX.
 
-Rules:
-- Return ONLY the raw LaTeX source, nothing else
-- Do not include any delimiters, wrappers, or environments (no $$, \\[, \\begin{equation}, etc.)
-- Do not include any explanation, commentary, or punctuation outside the LaTeX
-- If the image contains multiple equations, separate them with \\\\
+- Output raw LaTeX only: no commentary, no markdown fences, no $$ or \\[ \\] wrappers.
+- Math-mode environments (pmatrix, cases, aligned, etc.) are allowed where needed.
+- Wrap any prose inside the equation in \\text{...}.
+- If the image contains no equation, output exactly: NO_FORMULA_FOUND
 """.strip()
 
 
@@ -26,9 +26,14 @@ class FormulaEnricher(BaseItemAndImageEnrichmentModel):
     images_scale = 2.6  # TODO: empirical ablation to optimize scale
 
     def __init__(self, enabled: bool):
-        self.enabled = enabled
+        api_key = settings.anthropic_api_key.get_secret_value() if settings.anthropic_api_key else ""
 
-        self.client = anthropic.Client(api_key=settings.anthropic_api_key.get_secret_value())
+        if enabled and not api_key:
+            logging.warning("Anthropic API key not set; disabling formula enrichment.")
+            enabled = False
+
+        self.enabled = enabled
+        self.client = anthropic.Client(api_key=api_key) if enabled else None
 
     def is_processable(self, doc: DoclingDocument, element: NodeItem) -> bool:
         return self.enabled and isinstance(element, TextItem) and element.label == DocItemLabel.FORMULA
@@ -45,8 +50,10 @@ class FormulaEnricher(BaseItemAndImageEnrichmentModel):
             assert isinstance(formula_element.item, TextItem)
 
             formula = self._extract_formula(formula_element.image)
+            if formula == "NO_FORMULA_FOUND":
+                formula = ""  # Serializes as `<!-- formula-not-decoded -->`
             formula_element.item.text = formula
-            
+
             yield formula_element.item
 
     @staticmethod
