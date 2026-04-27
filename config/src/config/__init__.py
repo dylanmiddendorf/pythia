@@ -1,10 +1,4 @@
-from ._settings import (
-    AssistantSettings,
-    EmbeddingSettings,
-    QdrantSettings,
-    RetrieveSettings,
-    Settings,
-)
+from ._settings import AssistantSettings, EmbeddingSettings, QdrantSettings, RetrieveSettings, Settings
 
 settings = Settings()
 

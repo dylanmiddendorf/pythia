@@ -1,19 +1,9 @@
-from __future__ import annotations
-
 from pathlib import Path
 
-from pydantic import Field, SecretStr
-from pydantic import BaseModel
-from pydantic_settings import (
-    BaseSettings,
-    DotEnvSettingsSource,
-    PydanticBaseSettingsSource,
-    SettingsConfigDict,
-    TomlConfigSettingsSource,
-)
+from pydantic import BaseModel, Field, SecretStr
+from pydantic_settings import BaseSettings, PydanticBaseSettingsSource, SettingsConfigDict, TomlConfigSettingsSource
 
 _TOML_FILENAME = "pythia.toml"
-_DOTENV_FILENAME = ".env"
 
 
 def _find_file(name: str) -> Path | None:
@@ -43,10 +33,7 @@ class AssistantSettings(BaseModel):
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(
-        env_prefix="PYTHIA_",
-        env_nested_delimiter="__",
-    )
+    model_config = SettingsConfigDict(env_file=".env")
 
     anthropic_api_key: SecretStr | None = Field(default=None, validation_alias="ANTHROPIC_API_KEY")
 
@@ -64,9 +51,7 @@ class Settings(BaseSettings):
         dotenv_settings: PydanticBaseSettingsSource,
         file_secret_settings: PydanticBaseSettingsSource,
     ) -> tuple[PydanticBaseSettingsSource, ...]:
-        sources: list[PydanticBaseSettingsSource] = [env_settings]
-        if dotenv_path := _find_file(_DOTENV_FILENAME):
-            sources.append(DotEnvSettingsSource(settings_cls, env_file=dotenv_path))
+        sources: list[PydanticBaseSettingsSource] = [env_settings, dotenv_settings]
         if toml_path := _find_file(_TOML_FILENAME):
             sources.append(TomlConfigSettingsSource(settings_cls, toml_file=toml_path))
         return tuple(sources)
