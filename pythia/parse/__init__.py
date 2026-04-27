@@ -5,7 +5,7 @@ from docling.datamodel.base_models import InputFormat
 from docling.document_converter import DocumentConverter, PdfFormatOption
 from docling_core.types.doc.document import DoclingDocument
 from docling_core.types.doc.labels import DocItemLabel
-from preprocess.parse.pipeline import DatasheetPipeline
+from pythia.parse.pipeline import DatasheetPipeline
 
 _PROSE_HEADERS = re.compile(
     r"^## <!-- page: \d+ --> (where|notes?:?|therefore:?)$",

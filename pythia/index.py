@@ -2,7 +2,7 @@ import hashlib
 import re
 
 import torch
-from config import settings
+from pythia import settings
 from llama_index.core.node_parser import MarkdownNodeParser
 from llama_index.core.schema import Document as LlamaDocument
 from qdrant_client import QdrantClient
