@@ -1,5 +1,5 @@
 [tool.uv.workspace]
-members = ["preprocess", "retrieve", "assistant"]
+members = ["config", "preprocess", "retrieve", "assistant"]
 
 [tool.uv]
 default-groups = "all"
