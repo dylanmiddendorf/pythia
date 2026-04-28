@@ -10,7 +10,7 @@ wheels/
 .venv
 
 # Qdrant
-data/qdrant_store/
+data/qdrant/
 
 # Secrets
 .env

@@ -67,7 +67,7 @@ def generate(
     messages = build_prompt(query, context_chunks)
 
     response: ChatResponse = chat(
-        model=settings.assistant.ollama_model,
+        model=settings.generation.ollama_model,
         messages=messages,
         options={
             "temperature": 0.2,  # low temp for factual grounding

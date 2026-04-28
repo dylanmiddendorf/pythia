@@ -44,7 +44,7 @@ def retrieve(
     hits = client.query_points(
         collection_name=settings.qdrant.collection,
         query=q_vec,
-        limit=top_k if top_k is not None else settings.retrieve.top_k,
+        limit=top_k if top_k is not None else settings.retrieval.top_k,
         with_payload=True,
     ).points
 

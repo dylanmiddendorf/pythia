@@ -1,12 +1,12 @@
-from ._settings import AssistantSettings, EmbeddingSettings, QdrantSettings, RetrieveSettings, Settings
+from ._settings import GenerationSettings, EmbeddingSettings, QdrantSettings, RetrievalSettings, Settings
 
 settings = Settings()
 
 __all__ = [
-    "AssistantSettings",
+    "GenerationSettings",
     "EmbeddingSettings",
     "QdrantSettings",
-    "RetrieveSettings",
+    "RetrievalSettings",
     "Settings",
     "settings",
 ]

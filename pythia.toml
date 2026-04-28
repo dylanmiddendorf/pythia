@@ -3,11 +3,11 @@ model = "jinaai/jina-embeddings-v5-text-small"
 dim = 1024
 
 [qdrant]
-path = "data/qdrant_store"
+path = "data/qdrant"
 collection = "datasheets"
 
-[retrieve]
+[retrieval]
 top_k = 5
 
-[assistant]
+[generation]
 ollama_model = "qwen3.5:4b"

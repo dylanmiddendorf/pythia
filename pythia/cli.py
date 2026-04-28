@@ -21,8 +21,8 @@ def cmd_parse(args: argparse.Namespace) -> None:
         sys.stdout.write(md_text)
 
 
-def cmd_index(args: argparse.Namespace) -> None:
-    from pythia.index import chunk_markdown, embed_texts, get_qdrant, upsert_chunks
+def cmd_ingest(args: argparse.Namespace) -> None:
+    from pythia.ingest import chunk_markdown, embed_texts, get_qdrant, upsert_chunks
 
     md_text = Path(args.markdown).read_text(encoding="utf-8")
     print("Chunking markdown ...")
@@ -40,9 +40,9 @@ def cmd_index(args: argparse.Namespace) -> None:
     print(f"Done — indexed {len(chunks)} chunks for component '{args.component}'.")
 
 
-def cmd_ingest(args: argparse.Namespace) -> None:
+def cmd_add(args: argparse.Namespace) -> None:
     from pythia.parse import build_converter, extract_markdown
-    from pythia.index import chunk_markdown, embed_texts, get_qdrant, upsert_chunks
+    from pythia.ingest import chunk_markdown, embed_texts, get_qdrant, upsert_chunks
 
     print(f"Parsing {args.pdf} ...")
     converter = build_converter()
@@ -117,7 +117,7 @@ def cmd_ask(args: argparse.Namespace) -> None:
             print(f"\n--- Chunk {i} (score: {c['score']:.4f}, src: {c['component']}) ---")
             print(c["text"][:400] + ("..." if len(c["text"]) > 400 else ""))
 
-    print(f"\n[generate] Querying {settings.assistant.ollama_model} ...")
+    print(f"\n[generate] Querying {settings.generation.ollama_model} ...")
     answer, thinking = generate(args.query, chunks, think=not args.no_think)
 
     if thinking:
@@ -135,14 +135,14 @@ def build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="command", required=True)
 
     # --- ingest (parse + index) ---
-    p_ingest = sub.add_parser("ingest", help="Parse a PDF and index it into Qdrant in one step.")
+    p_ingest = sub.add_parser("add", help="Parse a PDF and index it into Qdrant in one step.")
     p_ingest.add_argument("pdf", help="Path to the input PDF file.")
     p_ingest.add_argument("component", help="Component name used as metadata (e.g. 'TPS54331').")
     p_ingest.add_argument(
         "--qdrant-path", default=settings.qdrant.path, metavar="PATH",
         help=f"Path to the local Qdrant store (default: {settings.qdrant.path!r}).",
     )
-    p_ingest.set_defaults(func=cmd_ingest)
+    p_ingest.set_defaults(func=cmd_add)
 
     # --- parse (PDF → markdown only) ---
     p_parse = sub.add_parser("parse", help="Convert a PDF to markdown without indexing.")
@@ -151,21 +151,21 @@ def build_parser() -> argparse.ArgumentParser:
     p_parse.set_defaults(func=cmd_parse)
 
     # --- index (markdown → Qdrant only) ---
-    p_index = sub.add_parser("index", help="Chunk, embed, and upsert a pre-parsed markdown file.")
+    p_index = sub.add_parser("ingest", help="Chunk, embed, and upsert a pre-parsed markdown file.")
     p_index.add_argument("markdown", help="Path to the input markdown file.")
     p_index.add_argument("component", help="Component name used as metadata.")
     p_index.add_argument(
         "--qdrant-path", default=settings.qdrant.path, metavar="PATH",
         help=f"Path to the local Qdrant store (default: {settings.qdrant.path!r}).",
     )
-    p_index.set_defaults(func=cmd_index)
+    p_index.set_defaults(func=cmd_ingest)
 
     # --- search (retrieval only) ---
     p_search = sub.add_parser("search", help="Run a retrieval query against the Qdrant index.")
     p_search.add_argument("query", help="Natural language query.")
     p_search.add_argument(
-        "--top-k", type=int, default=settings.retrieve.top_k, metavar="K",
-        help=f"Number of results to return (default: {settings.retrieve.top_k}).",
+        "--top-k", type=int, default=settings.retrieval.top_k, metavar="K",
+        help=f"Number of results to return (default: {settings.retrieval.top_k}).",
     )
     p_search.add_argument(
         "--qdrant-path", default=settings.qdrant.path, metavar="PATH",
@@ -178,8 +178,8 @@ def build_parser() -> argparse.ArgumentParser:
     p_ask = sub.add_parser("ask", help="Ask a natural-language question grounded in the indexed datasheets.")
     p_ask.add_argument("query", help="Natural language question.")
     p_ask.add_argument(
-        "--top-k", type=int, default=settings.retrieve.top_k,
-        help=f"Number of chunks to retrieve (default: {settings.retrieve.top_k}).",
+        "--top-k", type=int, default=settings.retrieval.top_k,
+        help=f"Number of chunks to retrieve (default: {settings.retrieval.top_k}).",
     )
     p_ask.add_argument(
         "--qdrant-path", default=settings.qdrant.path, metavar="PATH",
