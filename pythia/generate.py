@@ -1,15 +1,11 @@
 from __future__ import annotations
 
-import argparse
-import gc
 import re
 import textwrap
 
-import torch
-from config import settings
-from ollama import chat, ChatResponse
-from qdrant_client import QdrantClient
-from sentence_transformers import SentenceTransformer
+from ollama import ChatResponse, chat
+
+from pythia import settings
 
 SYSTEM_PROMPT = textwrap.dedent(
     """\
@@ -63,43 +59,15 @@ def build_prompt(query: str, context_chunks: list[dict]) -> list[dict]:
     ]
 
 
-def retrieve(
-    query: str,
-    model: SentenceTransformer,
-    client: QdrantClient,
-    top_k: int = TOP_K,
-) -> list[dict]:
-    q_vec = model.encode(query, normalize_embeddings=True).tolist()
-
-    hits = client.query_points(
-        collection_name=QDRANT_COLLECTION,
-        query=q_vec,
-        limit=top_k,
-        with_payload=True,
-    ).points
-
-    results = []
-    for hit in hits:
-        results.append(
-            {
-                "score": hit.score,
-                "text": hit.payload["text"],
-                "component": hit.payload["component"],
-                "page": hit.payload["page"],
-                "section_number": hit.payload.get("section_number", "<unknown>"),
-            }
-        )
-    return results
-
 def generate(
     query: str,
     context_chunks: list[dict],
     think: bool = True,
-) -> str:
+) -> tuple[str, str]:
     messages = build_prompt(query, context_chunks)
 
     response: ChatResponse = chat(
-        model=settings.assistant.ollama_model,
+        model=settings.generation.ollama_model,
         messages=messages,
         options={
             "temperature": 0.2,  # low temp for factual grounding
@@ -118,67 +86,3 @@ def generate(
 def strip_think_tags(text: str) -> str:
     """Remove <think>...</think> blocks if present in raw output."""
     return re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
-
-
-
-def main() -> None:
-    parser = argparse.ArgumentParser(description="Ask the Datasheet — RAG generation PoC")
-    parser.add_argument("query", help="Natural language question")
-    parser.add_argument("--top-k", type=int, default=settings.retrieve.top_k, help="Number of chunks to retrieve")
-    parser.add_argument(
-        "--no-think",
-        action="store_true",
-        help="Disable Qwen thinking mode for faster responses",
-    )
-    parser.add_argument(
-        "--show-context",
-        action="store_true",
-        help="Print retrieved chunks before the answer",
-    )
-    args = parser.parse_args()
-
-    print(f"[embed] Loading {settings.embedding.model} ...")
-    embedder = SentenceTransformer(
-        settings.embedding.model,
-        trust_remote_code=True,
-        device="cuda",
-        model_kwargs={"dtype": torch.bfloat16, "default_task": "retrieval"},  # Recommended for GPUs
-    )
-    client = QdrantClient(path=settings.qdrant.path)
-
-    print(f"[retrieve] Searching for top-{args.top_k} chunks ...")
-    chunks = retrieve(args.query, embedder, client, top_k=args.top_k)
-
-    del embedder
-    gc.collect()
-    torch.cuda.empty_cache()
-
-    if not chunks:
-        print("[retrieve] No chunks found. Have you indexed any datasheets?")
-        return
-
-    if args.show_context:
-        print(f"\n{'=' * 60}")
-        print("RETRIEVED CONTEXT")
-        print(f"{'=' * 60}")
-        for i, c in enumerate(chunks, 1):
-            print(f"\n--- Chunk {i} (score: {c['score']:.4f}, src: {c['component']}) ---")
-            print(c["text"][:400] + ("..." if len(c["text"]) > 400 else ""))
-
-    print(f"\n[generate] Querying {settings.assistant.ollama_model} ...")
-    answer, thinking = generate(args.query, chunks, think=not args.no_think)
-
-    if thinking:
-        print(f"\n{'=' * 60}")
-        print("MODEL THINKING (internal reasoning)")
-        print(f"{'=' * 60}")
-        print(thinking)
-
-    print(f"\n{'=' * 60}")
-    print(f"Q: {args.query}")
-    print(f"{'=' * 60}")
-    print(f"\n{answer}")
-
-
-if __name__ == "__main__":
-    main()

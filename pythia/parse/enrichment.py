@@ -10,7 +10,7 @@ from docling.datamodel.base_models import ItemAndImageEnrichmentElement
 from docling.models.base_model import BaseItemAndImageEnrichmentModel
 from docling_core.types.doc import DocItemLabel, DoclingDocument, NodeItem, TextItem
 
-from config import settings
+from pythia import settings
 
 FORMULA_EXTRACTION_PROMPT = """
 Extract the equation(s) from the image as MathJax-compatible LaTeX.

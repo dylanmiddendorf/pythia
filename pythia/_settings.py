@@ -20,15 +20,15 @@ class EmbeddingSettings(BaseModel):
 
 
 class QdrantSettings(BaseModel):
-    path: str = "data/qdrant_store"
+    path: str = "data/qdrant"
     collection: str = "datasheets"
 
 
-class RetrieveSettings(BaseModel):
+class RetrievalSettings(BaseModel):
     top_k: int = 5
 
 
-class AssistantSettings(BaseModel):
+class GenerationSettings(BaseModel):
     ollama_model: str = "qwen3.5:4b"
 
 
@@ -39,8 +39,8 @@ class Settings(BaseSettings):
 
     embedding: EmbeddingSettings = EmbeddingSettings()
     qdrant: QdrantSettings = QdrantSettings()
-    retrieve: RetrieveSettings = RetrieveSettings()
-    assistant: AssistantSettings = AssistantSettings()
+    retrieval: RetrievalSettings = RetrievalSettings()
+    generation: GenerationSettings = GenerationSettings()
 
     @classmethod
     def settings_customise_sources(

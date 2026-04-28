@@ -3,7 +3,7 @@ import logging
 from docling.datamodel.pipeline_options import PdfPipelineOptions, TableFormerMode
 from docling.pipeline.standard_pdf_pipeline import StandardPdfPipeline
 
-from preprocess.parse.enrichment import FormulaEnricher
+from pythia.parse.enrichment import FormulaEnricher
 
 
 class DatasheetPipelineOptions(PdfPipelineOptions):
