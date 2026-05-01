@@ -1,3 +1,6 @@
+[parsing]
+backend = "anthropic"
+
 [embedding]
 model = "jinaai/jina-embeddings-v5-text-small"
 dim = 1024
