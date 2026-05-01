@@ -60,12 +60,13 @@ class FormulaEnricher(BaseItemAndImageEnrichmentModel):
     def _encode_image(img: Image) -> str:
         img_buffer = BytesIO()
         img.save(img_buffer, format="PNG")
-        return base64.b64encode(img_buffer.getvalue()).decode()
+        return base64.standard_b64encode(img_buffer.getvalue()).decode("utf-8")
 
     def _extract_formula(self, img: Image) -> str:
         message = self.client.messages.create(
-            model="claude-haiku-4-5-20251001",
+            model="claude-haiku-4-5",
             max_tokens=1024,
+            system=FORMULA_EXTRACTION_PROMPT,
             messages=[
                 {
                     "role": "user",
@@ -78,7 +79,6 @@ class FormulaEnricher(BaseItemAndImageEnrichmentModel):
                                 "data": self._encode_image(img),
                             },
                         },
-                        {"type": "text", "text": FORMULA_EXTRACTION_PROMPT},
                     ],
                 }
             ],

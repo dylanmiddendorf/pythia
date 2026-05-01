@@ -13,7 +13,8 @@ def _find_file(name: str) -> Path | None:
             return candidate
     return None
 
-
+class ParsingSettings(BaseModel):
+    backend: str = "anthropic"
 class EmbeddingSettings(BaseModel):
     model: str = "jinaai/jina-embeddings-v5-text-small"
     dim: int = 1024
@@ -37,6 +38,7 @@ class Settings(BaseSettings):
 
     anthropic_api_key: SecretStr | None = Field(default=None, validation_alias="ANTHROPIC_API_KEY")
 
+    parsing: ParsingSettings = ParsingSettings()
     embedding: EmbeddingSettings = EmbeddingSettings()
     qdrant: QdrantSettings = QdrantSettings()
     retrieval: RetrievalSettings = RetrievalSettings()

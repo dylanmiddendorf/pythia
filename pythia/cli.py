@@ -6,13 +6,19 @@ import sys
 from pathlib import Path
 
 from pythia import settings
+from pythia.parse import AnthropicConverter, DoclingConverter
 
 
 def cmd_parse(args: argparse.Namespace) -> None:
     from pythia.parse import build_converter, extract_markdown
 
-    converter = build_converter()
-    md_text = extract_markdown(converter, args.pdf)
+    if settings.parsing.backend == "anthropic":
+        converter = AnthropicConverter()
+    elif settings.parsing.backend == "docling":
+        converter = DoclingConverter()
+    else:
+        raise ValueError(f"Unknown parse backend: {settings.parsing.backend!r}")
+    md_text = converter.convert(Path(args.pdf))
 
     if args.output:
         Path(args.output).write_text(md_text, encoding="utf-8")
