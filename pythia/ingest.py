@@ -3,14 +3,14 @@ import re
 
 import torch
 from pythia import settings
-from llama_index.core.node_parser import MarkdownNodeParser
-from llama_index.core.schema import Document as LlamaDocument
+from langchain_text_splitters import MarkdownHeaderTextSplitter
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, PointStruct, VectorParams
 from sentence_transformers import SentenceTransformer
 
-_NUMBERED_HEADER = re.compile(r"^## <!-- page: (\d+) --> (\d+(?:\.\d)*) (.*)$", re.IGNORECASE | re.MULTILINE)
-_FALLBACK_HEADER = re.compile(r"^## <!-- page: (\d+) --> (.*)$", re.IGNORECASE | re.MULTILINE)
+# Major-section headers carry an injected page comment plus an optional section
+# number (e.g. "<!-- page: 4 --> 6 Specifications" or "<!-- page: 2 --> Revision History").
+_HEADER_COMMENT = re.compile(r"<!-- page: (\d+) --> (?:(\d+(?:\.\d+)*) )?(.*)")
 
 _DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -21,39 +21,39 @@ def _chunk_id(chunk_text: str, component: str) -> int:
 
 
 def chunk_markdown(md_text: str, component: str) -> list[dict]:
-    # Wrap raw markdown in a LlamaIndex Document so the parser can consume it.
-    doc = LlamaDocument(text=md_text, metadata={"component": component})
-
-    parser = MarkdownNodeParser()
-    nodes = parser.get_nodes_from_documents([doc])
+    # Split only on first- and second-level headers; sub-sections stay inside
+    # the parent chunk so each major section is retrieved as a coherent unit.
+    splitter = MarkdownHeaderTextSplitter(
+        headers_to_split_on=[("#", "h1"), ("##", "h2")],
+        strip_headers=False,
+    )
+    docs = splitter.split_text(md_text)
 
     chunks = []
-    for node in nodes:
-        chunk_text = node.get_content()
-        section_header_text, *section_text = chunk_text.splitlines()
-
-        if (section_header := _NUMBERED_HEADER.match(section_header_text)) is not None:
-            page = section_header.group(1)
-            section_number = section_header.group(2)
-            section_name = section_header.group(3)
-            chunk_text = f"## {section_number} {section_name}\n{"\n".join(section_text)}"
-        elif (section_header := _FALLBACK_HEADER.match(section_header_text)) is not None:
-            page = section_header.group(1)
-            section_number = None  # Can't find section number (e.g., "Table of Contents")
-            section_name = section_header.group(2)
-            chunk_text = f"## {section_name}\n{"\n".join(section_text)}"
-        else:
-            print(f"[WARNING] Skipping chunk")
+    for doc in docs:
+        # Skip the document-title chunk; only level-2 sections carry indexable content.
+        raw_header = doc.metadata.get("h2")
+        if raw_header is None:
             continue
 
+        header_match = _HEADER_COMMENT.match(raw_header)
+        if header_match is None:
+            print(f"[WARNING] Skipping chunk with unrecognized header: {raw_header!r}")
+            continue
         
+        # Drop the page-tracking artifacts
+        page, section_number, section_name = header_match.groups()
+        clean_header = f"## {section_number} {section_name}" if section_number else f"## {section_name}"
+        _, *body = doc.page_content.splitlines()
+        chunk_text = "\n".join([clean_header, *body])
+
         chunks.append(
             {
                 "text": chunk_text,
                 # Stable ID lets us upsert without duplicates on re-index.
                 "chunk_id": _chunk_id(chunk_text, component),
                 "metadata": {
-                    **node.metadata,
+                    "component": component,
                     "page": page,
                     "section_number": section_number,
                 },
@@ -71,7 +71,7 @@ def embed_texts(texts: list[str]) -> list[list[float]]:
         model_kwargs={"dtype": torch.bfloat16, "default_task": "retrieval"},
     )
 
-    return model.encode(texts, normalize_embeddings=True, batch_size=8, show_progress_bar=True).tolist()
+    return model.encode(texts, normalize_embeddings=True, batch_size=2, show_progress_bar=True).tolist()
 
 
 def get_qdrant(path: str | None = None) -> QdrantClient:
