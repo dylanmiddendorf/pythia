@@ -68,7 +68,7 @@ fine as long as variable identities and relationships are preserved.
 - Display equations: `$$ ... $$`. If labeled `(N)` on the right, append `\\tag{N}`.
 - Inline equations and subscripted variable names: `$ ... $` (e.g., `$V_{CC}$`, `$I_{out}$`, `$f_{SW}$`).
 - Plain values, units, ranges stay plain: `5 V`, `10 µF`, `-40 °C to 85 °C`, `±5%`.
-- Active-low signals: `$\\overline{\\text{RESET}$` in math; bare name (`RESET`) in prose and cells. Be consistent.
+- Active-low signals: `$\\overline{\\text{RESET}}$` in math; bare name (`RESET`) in prose and cells. Be consistent.
 
 ## Tables
 
