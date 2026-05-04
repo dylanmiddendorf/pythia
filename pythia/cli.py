@@ -10,8 +10,6 @@ from pythia.parse import AnthropicConverter, DoclingConverter
 
 
 def cmd_parse(args: argparse.Namespace) -> None:
-    from pythia.parse import build_converter, extract_markdown
-
     if settings.parsing.backend == "anthropic":
         converter = AnthropicConverter()
     elif settings.parsing.backend == "docling":
@@ -98,7 +96,7 @@ def cmd_search(args: argparse.Namespace) -> None:
 def cmd_ask(args: argparse.Namespace) -> None:
     import torch
 
-    from pythia.generate import generate
+    from pythia.generate import build_generator
     from pythia.retrieve import get_embedding_model, get_qdrant, retrieve
 
     print(f"[embed] Loading {settings.embedding.model} ...")
@@ -123,8 +121,9 @@ def cmd_ask(args: argparse.Namespace) -> None:
             print(f"\n--- Chunk {i} (score: {c['score']:.4f}, src: {c['component']}) ---")
             print(c["text"][:400] + ("..." if len(c["text"]) > 400 else ""))
 
-    print(f"\n[generate] Querying {settings.generation.ollama_model} ...")
-    answer, thinking = generate(args.query, chunks, think=not args.no_think)
+    generator = build_generator()
+    print(f"\n[generate] Querying {generator.model} ...")
+    answer, thinking = generator.generate(args.query, chunks, think=not args.no_think)
 
     if thinking:
         print(f"\n{'=' * 60}\nMODEL THINKING (internal reasoning)\n{'=' * 60}")
