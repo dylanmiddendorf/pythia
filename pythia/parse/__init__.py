@@ -50,9 +50,9 @@ by dots) + 1**, where the +1 reserves `#` for the document title.
 Examples:
 - `# <!-- page: 1 --> TPS54331 3-A, 28-V Input, Step Down DC-DC Converter With Eco-mode`
 - `## <!-- page: 1 --> 1 Features`
-- `## <!-- page: 38 --> PACKAGE OUTLINE`
-- `### <!-- page: 38 --> D0008A — SOIC - 1.75 mm max height`
+- `### <!-- page: 10 --> 7.3 Feature Description`
 - `##### <!-- page: 17 --> 8.2.2.6 Capacitor Selection`
+- `## <!-- page: 38 --> PACKAGE OUTLINE`
 
 Use section numbers exactly as printed; don't derive from the page number. If \
 a section continues across pages, do not add a new heading with "(continued)" \
@@ -211,7 +211,7 @@ class AnthropicConverter(AbstractDocumentConverter):
         )
 
     def convert_chunk(self, pdf_chunk: str, start_page: int) -> str:
-        system_prompt = _PROMPT.replace("{page}", f"{start_page}")
+        system_prompt = _PROMPT.replace("{page}", str(start_page))
         message = self._client.messages.create(
             model=self._model,
             max_tokens=8192,

@@ -30,7 +30,10 @@ class RetrievalSettings(BaseModel):
 
 
 class GenerationSettings(BaseModel):
+    backend: str = "anthropic"
     ollama_model: str = "qwen3.5:4b"
+    anthropic_model: str = "claude-haiku-4-5"
+    anthropic_thinking_budget: int = 2048
 
 
 class Settings(BaseSettings):

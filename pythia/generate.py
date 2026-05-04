@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import re
 import textwrap
+from abc import ABC, abstractmethod
 
+import anthropic
 from ollama import ChatResponse, chat
 
 from pythia import settings
@@ -59,28 +61,112 @@ def build_prompt(query: str, context_chunks: list[dict]) -> list[dict]:
     ]
 
 
+class AbstractGenerator(ABC):
+    @abstractmethod
+    def generate(
+        self,
+        query: str,
+        context_chunks: list[dict],
+        think: bool = True,
+    ) -> tuple[str, str]:
+        """Generate an answer for `query` grounded in `context_chunks`.
+
+        Returns a `(content, thinking)` tuple. `thinking` may be empty for
+        backends that do not expose a separate reasoning channel.
+        """
+
+
+class OllamaGenerator(AbstractGenerator):
+    def __init__(self, model: str | None = None):
+        self._model = model or settings.generation.ollama_model
+
+    @property
+    def model(self) -> str:
+        return self._model
+
+    def generate(
+        self,
+        query: str,
+        context_chunks: list[dict],
+        think: bool = True,
+    ) -> tuple[str, str]:
+        messages = build_prompt(query, context_chunks)
+
+        response: ChatResponse = chat(
+            model=self._model,
+            messages=messages,
+            options={
+                "temperature": 0.2,  # low temp for factual grounding
+                "num_ctx": 8192,  # context window for long chunks
+                "num_predict": 4096,  # cap output length
+            },
+            think=think,
+        )
+
+        content = response.message.content or ""
+        thinking = response.message.thinking or ""
+
+        return content, thinking
+
+
+class AnthropicGenerator(AbstractGenerator):
+    def __init__(self, model: str | None = None):
+        api_key = settings.anthropic_api_key.get_secret_value() if settings.anthropic_api_key else ""
+        self._client = anthropic.Anthropic(api_key=api_key)
+        self._model = model or settings.generation.anthropic_model
+
+    @property
+    def model(self) -> str:
+        return self._model
+
+    def generate(
+        self,
+        query: str,
+        context_chunks: list[dict],
+        think: bool = True,
+    ) -> tuple[str, str]:
+        messages = build_prompt(query, context_chunks)
+        system_prompt = messages[0]["content"]
+        user_messages = [{"role": m["role"], "content": m["content"]} for m in messages[1:]]
+
+        budget = settings.generation.anthropic_thinking_budget
+        max_tokens = 4096
+        kwargs: dict = {
+            "model": self._model,
+            "system": system_prompt,
+            "messages": user_messages,
+        }
+        if think:
+            # Extended thinking requires temperature=1 and max_tokens > budget_tokens.
+            kwargs["max_tokens"] = max(max_tokens, budget + 2048)
+            kwargs["temperature"] = 1.0
+            kwargs["thinking"] = {"type": "enabled", "budget_tokens": budget}
+        else:
+            kwargs["max_tokens"] = max_tokens
+            kwargs["temperature"] = 0.2
+
+        response = self._client.messages.create(**kwargs)
+
+        content = "".join(block.text for block in response.content if block.type == "text")
+        thinking = "".join(block.thinking for block in response.content if block.type == "thinking")
+        return content, thinking
+
+
+def build_generator() -> AbstractGenerator:
+    backend = settings.generation.backend
+    if backend == "ollama":
+        return OllamaGenerator()
+    if backend == "anthropic":
+        return AnthropicGenerator()
+    raise ValueError(f"Unknown generation backend: {backend!r}")
+
+
 def generate(
     query: str,
     context_chunks: list[dict],
     think: bool = True,
 ) -> tuple[str, str]:
-    messages = build_prompt(query, context_chunks)
-
-    response: ChatResponse = chat(
-        model=settings.generation.ollama_model,
-        messages=messages,
-        options={
-            "temperature": 0.2,  # low temp for factual grounding
-            "num_ctx": 8192,  # context window for long chunks
-            "num_predict": 4096,  # cap output length
-        },
-        think=think,
-    )
-
-    content = response.message.content or ""
-    thinking = response.message.thinking or ""
-
-    return content, thinking
+    return build_generator().generate(query, context_chunks, think=think)
 
 
 def strip_think_tags(text: str) -> str:

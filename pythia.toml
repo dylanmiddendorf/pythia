@@ -13,4 +13,7 @@ collection = "datasheets"
 top_k = 5
 
 [generation]
+backend = "anthropic"
 ollama_model = "qwen3.5:4b"
+anthropic_model = "claude-haiku-4-5"
+anthropic_thinking_budget = 2048
